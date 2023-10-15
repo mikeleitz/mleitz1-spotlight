@@ -190,7 +190,7 @@ function Resume() {
     },
     {
       company: 'Trustwave',
-      title: 'Software Manager & Architect',
+      title: 'Software Development Manager',
       logo: trustwave,
       start: '2010',
       end: '2020',
