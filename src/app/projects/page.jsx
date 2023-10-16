@@ -2,47 +2,41 @@ import Image from 'next/image'
 
 import { Card } from '@/components/Card'
 import { SimpleLayout } from '@/components/SimpleLayout'
-import logoAnimaginary from '@/images/logos/animaginary.svg'
-import logoCosmos from '@/images/logos/cosmos.svg'
+import licketyScript from '@/images/logos/lickety-script.png'
+import bashSwipe from '@/images/logos/bash-swipe.jpg'
 import logoHelioStream from '@/images/logos/helio-stream.svg'
-import logoOpenShuttle from '@/images/logos/open-shuttle.svg'
-import logoPlanetaria from '@/images/logos/planetaria.svg'
+import tenRules from '@/images/logos/10-rules.png'
 
 const projects = [
   {
-    name: 'Planetaria',
+    name: 'Lickety Script',
     description:
-      'Creating technology to empower civilians to explore space on their own terms.',
-    link: { href: 'http://planetaria.tech', label: 'planetaria.tech' },
-    logo: logoPlanetaria,
+      'A better way to create Bash Scripts.',
+    link: { href: 'https://licketyscript.app', label: 'licketyscript.app' },
+    logo: licketyScript
+
+    ,
   },
   {
-    name: 'Animaginary',
+    name: '10 Rules for Devs',
     description:
-      'High performance web animation library, hand-written in optimized WASM.',
-    link: { href: '#', label: 'github.com' },
-    logo: logoAnimaginary,
+      'The 10 crucial rules of software development..',
+    link: { href: 'https://get.10rulesfordevs.com', label: '10rulesfordevs.com' },
+    logo: tenRules,
   },
   {
-    name: 'HelioStream',
+    name: 'How to Estimate Tasks Perfectly',
     description:
-      'Real-time video streaming library, optimized for interstellar transmission.',
-    link: { href: '#', label: 'github.com' },
+      'This book is for all software developers, managers, and executives trying to perfect their planning process.',
+    link: { href: 'https://leitz.gumroad.com/l/icesvf', label: 'leitz.gumroad.com/l/icesvf' },
     logo: logoHelioStream,
   },
   {
-    name: 'cosmOS',
+    name: 'Bash Swipe',
     description:
-      'The operating system that powers our Planetaria space shuttles.',
-    link: { href: '#', label: 'github.com' },
-    logo: logoCosmos,
-  },
-  {
-    name: 'OpenShuttle',
-    description:
-      'The schematics for the first rocket I designed that successfully made it to orbit.',
-    link: { href: '#', label: 'github.com' },
-    logo: logoOpenShuttle,
+      'Create Bash scripts easily.',
+    link: { href: 'https://bashswipe.com', label: 'bashswipe.com' },
+    logo: bashSwipe,
   },
 ]
 
@@ -58,15 +52,15 @@ function LinkIcon(props) {
 }
 
 export const metadata = {
-  title: 'Projects',
-  description: 'Things I’ve made trying to put my dent in the universe.',
+  title: 'Creations',
+  description: 'Things I’ve made.',
 }
 
 export default function Projects() {
   return (
     <SimpleLayout
-      title="Things I’ve made trying to put my dent in the universe."
-      intro="I’ve worked on tons of little projects over the years but these are the ones that I’m most proud of. Many of them are open-source, so if you see something that piques your interest, check out the code and contribute if you have ideas for how it can be improved."
+      title="Things I’ve made."
+      intro="Projects that I created using my experience and passion for the software business."
     >
       <ul
         role="list"
