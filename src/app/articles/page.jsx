@@ -43,7 +43,7 @@ export default async function ArticlesIndex() {
 
   return (
     <SimpleLayout
-      title="From over two decades in software"
+      title="TWO decades in software"
       intro="Thoughts and experiences from 25 years in the software business."
     >
       <div className="md:border-l md:border-zinc-100 md:pl-6 md:dark:border-zinc-700/40">

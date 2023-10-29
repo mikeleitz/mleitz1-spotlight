@@ -1,0 +1,200 @@
+import { ArticleLayout } from '@/components/ArticleLayout'
+import Image from 'next/image'
+
+export const article = {
+  author: 'Leitz',
+  date: '2018-05-31',
+  title: 'Decompile Java class files from the command line',
+  description:
+    'There are times developers need to view Java source code when they don\'t have the .java source file. Perhaps they only have the .class file or a .jar file full of .class files.',
+}
+
+export const metadata = {
+  title: article.title,
+  description: article.description,
+}
+
+export default (props) => <ArticleLayout article={article} {...props} />
+
+There are times developers need to view Java source code when they don't have the .java source file. Perhaps they only have the .class file or a .jar file full of .class files.
+
+When working in an IDE like IntelliJ, the IDE will decompile the .class files automatically and show the source code representation. Sometimes, though, developers are stuck using the command line. Maybe they're on a remote computer or just navigating a laptop filesystem.
+
+This blog entry shows how to configure your computer to decompile .class files from the command line easily.
+
+## Library
+
+Luckily, a Java library/application already exists to enable decompiling. All you need to do is download it and update your bash file.
+
+[jd-cmd](https://github.com/kwart/jd-cmd) is a .jar file that runs on the command line.
+
+For example if you have a class xyz.class, it's decompiled by
+
+```
+java -jar jd-cli.jar xyz.class
+```
+
+## Command Line
+
+Now developers can do better than having to remember and type in this whole command each time. By creating a bash function, it's easier to run the decompile command.
+
+So instead of having to type
+
+```
+java -jar jd-cli.jar xyz.class
+```
+
+we can simplify it to
+
+```
+dec xyz.class
+```
+
+Once you add the function, you won't have to worry about remembering the specific command, path to the jd-cli.jar file, or any other args you might want to use.
+
+
+There is one decision you have to make. Where do you put the jd-cli.jar file? This blog entry will assume you've decided to put it in your home directory under ~/Development/tools/decompile/. If you want to put it elsewhere, make the substitution in the directions below.
+
+```
+mkdir -p ~/Development/tools/decompile
+```
+
+Navigate to jd-cmd's [release page](https://github.com/kwart/jd-cmd/releases/latest). Download the dist .zip and unzip it. Copy jd-cli.jar to ~/Development/tools/decompile/.
+
+### CHECKPOINT TEST YOUR SETUP
+
+In a terminal window, run
+
+```
+java -jar ~/Development/tools/decompile/jd-cli.jar
+```
+
+After you type the command, you should see the jd-cli.jar help text.
+
+```
+$ java -jar ~/Development/tools/decompile/jd-cli.jar
+
+jd-cli version 0.9.3-SNAPSHOT - Copyright (C) 2015 Josef
+Cacek
+
+The jd-cli is a command line interface for the Java
+Decompiler (http://jd.benow.ca/), it decompile classes,
+zip archives (.zip, .jar, .war, ...) and directories
+containing classes. Each supported input type has configured
+corresponding default output type (class->screen,
+zip->zip, directory->directory). Man can simply override
+the output type by specifying a command line parameter
+(-oc, -od, -oz). Multiple output type parameters can be
+used at once.
+
+Usage: java -jar jd-cli.jar [options] [Files to decompile]
+  Options:
+  ... more...
+```
+
+If you don't see this help page, ensure jd-cli.jar is in ~/Development/tools/decompile/jd-cli.jar.
+
+### UPDATE YOUR .BASHRC
+
+The last step is to update the .bashrc file and add a function to simplify jd-cli's usage.
+
+Add the following line towards the top of ~/.bashrc. Copy and paste it exactly or it probably won't work (substitute the path if you don't want it in ~/Development/tools/decompile).
+
+
+```
+function dec() {
+  java -jar ~/Development/tools/decompile/jd-cli.jar "$@";
+}
+```
+
+
+### TEST
+
+Open a new terminal shell so this new function get loaded (or use the source command if you're familiar with that). Then type: dec
+
+```
+$ dec
+jd-cli version 0.9.3-SNAPSHOT - Copyright (C) 2015 Josef
+Cacek
+
+The jd-cli is a command line interface for the Java
+Decompiler (http://jd.benow.ca/), it decompile classes,
+zip archives (.zip, .jar, .war, ...) and directories
+containing classes. Each supported input type has configured
+corresponding default output type (class->screen,
+zip->zip, directory->directory). Man can simply override
+the output type by specifying a command line parameter
+(-oc, -od, -oz). Multiple output type parameters can be
+used at once.
+
+Usage: java -jar jd-cli.jar [options] [Files to decompile]
+  Options:
+  ... more ...
+```
+
+If that worked, you're done. 
+
+Now find a .class file and give it a real test.
+
+Here's an example using a .class file from my other blog entry on Custom Annotations.
+
+```
+$ dec MyExampleAnnotationAspect.class
+11:41:29.389 INFO  jd.cli.Main - Decompiling
+MyExampleAnnotationAspect.class
+package com.mikeleitz.example.annotation.annotation;
+
+import com.mikeleitz.example.annotation.service.NotifyService;
+import java.lang.reflect.Method;
+import org.aspectj.lang.NoAspectBoundException;
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.reflect.MethodSignature;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.stereotype.Component;
+
+@Aspect
+@Component
+public class MyExampleAnnotationAspect
+  implements ApplicationContextAware
+{
+  public static MyExampleAnnotationAspect aspectOf()
+  {
+
+/* ... snip... */
+
+  public void setApplicationContext(ApplicationContext
+applicationContext)
+    throws BeansException
+  {
+    _notifyService = (NotifyService)applicationContext
+                      .getBean(NotifyService.class);
+  }
+}
+
+/* Location:
+ * Qualified Name:     MyExampleAnnotationAspect
+ * Java Class Version: 8 (52.0)
+ * JD-Core Version:    0.7.1
+ */
+```
+
+Here's how to decompile all .class files inside a .jar and save the results to a directory called decompile.
+
+```
+dec annotation-example-0.0.1-SNAPSHOT.jar \
+-skipResources -od decompiled -oc
+```
+
+Use the jd-cli help for other supported decompile features.
+
+## Wrap Up
+
+This helps you when you're doing work on the command line and need to decompile a Java .class file.
+
+If you can't get this work, feel free to reach out to me https://mleitz1@x.com and I will help.
