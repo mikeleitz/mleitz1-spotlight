@@ -1,0 +1,240 @@
+import { ArticleLayout } from '@/components/ArticleLayout'
+import Image from 'next/image'
+
+export const article = {
+  author: 'Leitz',
+  date: '2019-11-21',
+  title: 'Tmux the Terminal Emulator',
+  description:
+    'Use the boutique software application Tmux to maximize your terminal usage. It\'s free and can change your terminal productivity for ever! Demo included.',
+}
+
+export const metadata = {
+  title: article.title,
+  description: article.description,
+}
+
+export default (props) => <ArticleLayout article={article} {...props} />
+
+The terminal multiplexer, tmux, is a software application that helps manage multiple terminal connections.
+
+Some of the major features
+
+ 1. Connect and display multiple sessions in the same terminal window.
+ 2. Issue keystrokes to each open session. Install software on multiple servers simultaneously.
+ 3. Detach sessions, allow them to continue running, and reattach later.
+
+Tmux is a program that lives in your terminal and allows you to work on multiple things at once.
+
+## Basics
+
+### TERMINOLOGY
+
+#### WORKFLOW
+
+Client → Server → Session → Window → Panes
+
+A client(you) connects to a server(local machine or remote). A tmux service is running in the background on that server and will do the magic of handling session/window management. The user then creates a new tmux session to do some work. Each tmux session contains a Window object (but there can be many) and within each Window, there are one (or many) panes.
+
+From [Faster command line workflow](https://medium.com/@lamdbui/faster-command-line-workflow-with-tmux-a6539c8eae2c)
+
+#### SESSION
+
+Tmux requires a session. All output is captured in a session. All sessions are managed by the session manager.
+
+#### WINDOW
+
+A windows is attached to a tmux session and a window contains one or more panes. You can detach and reattach windows.
+
+#### PANE
+
+A new terminal window under a given tmux window.
+
+#### PREFIX KEY
+
+The prefix key indicates you want to execute a tmux command. The default is control-b. You can change the prefix key, if you wish.
+
+Listing all tmux windows: press control-b and then press ‘w’.
+
+```
+# Enter command-mode:
+ctrl-b
+
+# Enter text command-mode:
+ctrl-b :
+
+# Exit command-mode:
+esc
+
+# List command-mode shortcuts:
+ctrl-b ?
+```
+
+### INSTALLATION
+
+```
+# osx
+brew install tmux
+```
+
+```
+#debian
+sudo apt-get install tmux
+```
+
+There’s windows support. Apparently Windows 10+ comes with bash.
+
+### USAGE
+
+#### ATTACH TO EXISTING TMUX SESSION OR CREATE A NEW ONE
+
+```
+tmux attach || tmux
+```
+
+#### CREATE NEW TMUX SESSION WITH NAME MY-BUILD
+
+```
+tmux new-session -s my-build
+```
+
+#### SHOW ALL SESSIONS
+
+```
+ctl-b w
+```
+
+#### RENAME YOUR SESSION
+
+```
+ctl-b ,
+```
+
+#### CREATE NEW SESSION
+
+```
+ctl-b c
+```
+
+#### CREATE NEW PANES
+
+
+```
+ctl-b %
+```
+
+#### REARRANGE PANES
+
+
+```
+ctl-b space
+```
+
+#### NAVIGATION
+
+```
+ctl-b arrow-keys
+```
+
+#### ISSUE COMMANDS TO ALL PANES
+
+```
+# enable
+ctl-b :
+setw synchronize-panes on
+
+# disable
+ctl-b :
+setw synchronize-panes off
+```
+
+
+## Demo
+
+For the demo we'll run three separate ubuntu docker containers, connect to each of them in a separate pane, and install java simultaneously on each container.
+
+```
+# download ubuntu docker image
+docker pull ubuntu
+
+# start 3 distinct containers from the ubuntu image
+docker run -h tmux-test-1 --name tmux-test-1 \
+  -d --rm -t ubuntu:latest
+
+docker run -h tmux-test-2 --name tmux-test-2 \
+  -d --rm -t ubuntu:latest
+
+docker run -h tmux-test-3 --name tmux-test-3 \
+  -d --rm -t ubuntu:latest
+```
+
+
+Now we'll create the tmux session, window, and 3 panes. One pane for each docker container we want to configure.
+
+```
+# see if there are any existing tmux sessions
+tmux ls
+
+# start a tmux session
+tmux new -s docker-configure-session
+
+# create a second pane
+ctl-b "
+
+# navigate between the panes
+ctl-b down-arrow
+ctl-b up-arrow
+
+# create a third pane
+ctl-b "
+
+# rearrange the panes vertically instead of horizontally
+ctl-b space
+# can do more ctl-b space to try different layouts
+
+# connect to each docker container. one in each pane.
+docker exec -it tmux-test-1 /bin/bash
+
+docker exec -it tmux-test-2 /bin/bash
+
+docker exec -it tmux-test-3 /bin/bash
+
+# tell tmux to issue keystrokes to all panes
+ctl-b : setw synchronize-panes on
+
+# make sure it works
+clear
+whoami
+uname -a
+
+# each pane should have a different hostname
+
+# update ubuntu package manager
+apt-get update
+clear
+
+# install java
+apt-get install openjdk-11-jdk
+y
+
+# test
+
+java -version
+```
+
+If you have any problems, contact me on X at https://x.com/mleitz1
+
+## Resources
+
+ 1. [https://www.reddit.com/r/tmux](https://www.reddit.com/r/tmux)
+ 2. [https://github.com/xamut/tmux-network-bandwidth](https://github.com/xamut/tmux-network-bandwidth)
+ 3. [https://github.com/xamut/tmux-weather](https://github.com/xamut/tmux-weather)
+ 4. [https://medium.com/@bingorabbit/tmux-propagate-to-all-panes-9d2bfb969f01](https://medium.com/@bingorabbit/tmux-propagate-to-all-panes-9d2bfb969f01)
+ 5. [http://www.howardism.org/Technical/Linux/tmux.html](http://www.howardism.org/Technical/Linux/tmux.html)
+ 6. [http://www.dayid.org/comp/tm.html](http://www.dayid.org/comp/tm.html)
+ 7. [https://medium.com/@lamdbui/faster-command-line-workflow-with-tmux-a6539c8eae2c](https://medium.com/@lamdbui/faster-command-line-workflow-with-tmux-a6539c8eae2c)
+ 8. [https://medium.com/@bntzio/super-productive-programming-with-tmux-part-i-c3b8553c9174](https://medium.com/@bntzio/super-productive-programming-with-tmux-part-i-c3b8553c9174)
+ 9. [https://gist.github.com/bntzio/9dc35f410c3c0547ca2ed46b8e37e3ac](https://gist.github.com/bntzio/9dc35f410c3c0547ca2ed46b8e37e3ac)
+ 10. [https://deliciousbrains.com/tmux-for-local-development/](https://deliciousbrains.com/tmux-for-local-development/)
+ 11. [https://gist.github.com/karenyyng/5de2823651965361b788](https://gist.github.com/karenyyng/5de2823651965361b788)
+ 12. [https://www.sitepoint.com/10-killer-tmux-tips/](https://www.sitepoint.com/10-killer-tmux-tips/)
