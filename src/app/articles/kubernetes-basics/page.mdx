@@ -1,0 +1,298 @@
+import { ArticleLayout } from '@/components/ArticleLayout'
+import Image from 'next/image'
+
+export const article = {
+  author: 'Leitz',
+  date: '2019-07-20',
+  title: 'Kubernetes Basics',
+  description:
+    'Learn the basics of Kubernetes. The platform that\'s transformed the modern software landscape forever!',
+}
+
+export const metadata = {
+  title: article.title,
+  description: article.description,
+}
+
+export default (props) => <ArticleLayout article={article} {...props} />
+
+[Kubernetes](https://en.wikipedia.org/wiki/Kubernetes), also referred to as k8s, is quickly becoming the standard deployment platform for today's server side applications.
+
+You may have heard of it but don't quite know what's going on. If you're an application developer, this blog is for you. I'll outline the core parts that really matter and give you some approaches to get up and running quickly.
+
+I'll be leaving out everything but the basics. The goal here is to get you up and running quickly.
+
+This will be a series. It will take the typical application developer from not knowing anything and teaching them the basic skills to work within a k8s cluster. The overall goal isn't to make you an expert on k8s but to give you the tools you need to get your applications working within the cluster.
+
+## What you need
+
+You need a k8s infrastructure to get started. You can use Amazon's, Google's, or IBM's implementation. Those are built on these core concepts. These all give you some amount of capacity for free, although you have to enter payment details before they let you get started.
+
+You'll need to be careful with your usage on these platforms to avoid bills, and I don't like these for learning. It's easy to run up a bill and not realize it. When I first used Amazon's EKS platform, I was billed $30 before I even knew the meter was running.
+
+I recommend having your own k8s platform to practice on. This blog's examples run on the Raspberry Pi Kubernetes cluster. The total cost of this cluster is around $200 and can be up and running in an hour or so. If you need more capacity, you can easily expand by adding more rPis too.
+
+Even though I recommend your own infrastructure, I do plan on creating follow up blog entries on some of these popular k8s cloud providers.
+
+All the manifests used in this blog post are located on my [github page](https://github.com/mikeleitz/k8s-blog) for k8s-blog.
+
+## Kubernetes basics
+
+I'll go through each of the basic parts and what their purpose is.
+
+### DOCKER (CONTAINERIZATION)
+
+K8s is requires you to have your application wrapped up inside a container. Docker is the most common but other types are supported like rkt. If you don't know much about Docker, you should definitely pick up those skills. For now, however, deep Docker knowledge isn't required to get started with k8s.
+
+Just know that, in general, one Docker container is one application. For example, [the MySQL database](https://hub.docker.com/r/hypriot/rpi-mysql/) is encapsulated inside a single Docker container. When I mention application, think a MySQL application. Not one database, though. This MySQL application can still have many databases. It's one database application.
+
+Some quick notes about Docker.
+
+ * Docker images must deployed to their appropriate cpu architecture. A Docker container built for Intel cpus won't run on an arm cpu. This is really important. If your application doesn't start, check for this problem first.
+
+## ORCHESTRATION PROBLEM
+
+The Docker software is designed to be installed on a single computer. On this computer, you can deploy many applications provided they are inside their own Docker container.
+
+This is great when you're working on a laptop but when you have a server farm of 1000s of computers, how do you manage deploying your applications there?
+
+That's where Kubernetes comes in. You tell k8s what applications you want to deploy, what resources they require, and the k8s cluster will handle the rest. It deploys the number of application instances you want and monitors them. If one goes down for any reason, k8s will start up another instance automatically. If a whole physical server goes down, k8s will take all the instances on the failed server and deploy them to a node that's running correctly.
+
+## BUILDING BLOCKS
+
+There are three foundational building blocks of Kubernetes: nodes (capacity), pods (applications) and services (access to applications). There are more features, of course, but if you understand these two you can do basic deployments
+
+### NODES
+
+A computer with Kubernetes software installed on it is a node. It's a single computer. A cluster is made up of multiple nodes. Think of this as the **cluster's capacity**.
+
+Nodes have two types: master and worker. Master keeps track of what's going on within the cluster and worker nodes run the applications you want.
+
+Your cluster needs at least 2 nodes: one master and one worker. It can have, as far as I can tell, an unlimited number of nodes.
+
+### PODS
+
+Pods are the smallest unit in Kubernetes. To start understanding them, just assume one pod is one application instance. For example, one MySQL Database will be one pod. This definition isn't exactly true, but for now think of a pod as the **application**.
+
+Pod instances are transient in the k8s cluster. The cluster can and will move these pod instances around as it sees fit. The k8s cluster will follow the rules you've set out (using things like ReplicaSets which we will get to in a future blog entry) but you can't assume the pod will remain on its original node. Over time assume the ip address the pod will change too.
+
+### SERVICES
+
+Since pods can move around the cluster and their ip address can change, you need a mechanism to track them and keep a consistent ip address to access them. Think of services as **providing access** to your applications.
+
+Services handle this requirement. Services expose pods to users and systems both inside and outside the cluster.
+
+### NETWORKING INSIDE A CLUSTER
+
+One thing to understand about k8s ip addresses is that most ip addresses you see in the cluster aren't routable outside the cluster itself.
+
+If you lookup a pod's ip address and see 10.0.1.10, you won't be able to access it. Other pods can access this address but you won't be able to. Even if you log onto the master node and try to reach that ip address, you can't. You need to expose it using a service.
+
+Also don't waste time trying to debug networking connection problems with k8s using ping. It just doesn't work.
+
+### MECHANICS
+
+Here's what we know so far. Nodes are the computers running the Kubernetes software, pods are your applications, and services allow you to access pods.
+
+Now we can get into the commands you need to navigate this world.
+
+Each of these concepts in Kubernetes has a manifest describing it. Pods and services are both concepts. This manifest tells Kubernetes everything it needs to know in order to create it.
+
+The immediate sections that follow will be the commands and manifests you can use on the Raspberry Pi k8s cluster we created in my previous blog post.
+
+The application we will deploy is a Spring boot application that has a couple of features.
+
+ 1. You can ask the application for its hostname.
+ 2. You can ask the application for an id number.
+ 3. You can get/save messages to an in memory database.
+
+#### Pods
+
+Our pod has a manifest. It's pretty basic:
+
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: k8s-demo-app-pod                                # The name Kubernetes will know this pod as.  You will reuse this name when you define its corresponding service.
+  labels:
+    app: k8s-demo-app                                   # You can attach labels in key/value pairs to allow for groupings and easy search.
+spec:                                                   # Spec section describes the application and what it needs.
+  containers:
+    - name: k8s-demo-app                                # The container name
+      image: mleitz1/k8s-demo-app:0.0.1-SNAPSHOT_arm32  # This is where to find it.  It's defaulting to my Docker hub.
+```
+
+The above pod manifest tells k8s everything it needs to create a single pod with our sample application. This application is a simple Java Spring boot application and it's already in a Docker container.
+
+Note: This manifest will create a pod using an arm cpu Docker image.
+
+By running the appropriate Kubernetes command on the master node, k8s will deploy this as a pod to an available node.
+
+```
+kubectl apply -f \
+https://raw.githubusercontent.com/mikeleitz/k8s-blog/master/01_pods-and-services/rpi-cluster/01_k8s-demo-app-kubernetes_pod-only.yaml
+```
+
+You can run this directly from the github url or save the contents to a file, which ever you prefer.
+
+That's it. The apply command is universal and can be used for all the concepts. Unless you see an error using the below commands, your pod is all set. Once you create the service, you'll be able to access your application.
+
+#### Pod Investigation tools
+
+Here's some commands to peek inside the cluster and see how your pods are doing.
+
+##### kubectl get
+
+```
+$ kubectl get pods
+NAME               READY   STATUS    RESTARTS   AGE
+k8s-demo-app-pod   1/1     Running   0          36s
+```
+
+##### kubectl describe
+
+```
+$ kubectl describe pod k8s-demo-app-pod
+Name:         k8s-demo-app-pod
+Namespace:    default
+Priority:     0
+Node:         k8s-worker-01/192.168.2.11
+Start Time:   Mon, 15 Jul 2019 15:46:29 -0500
+Labels:       app=k8s-demo-app
+
+.... snip ...
+
+Node-Selectors:  <none>
+Tolerations:     node.kubernetes.io/not-ready:NoExecute for 300s
+                 node.kubernetes.io/unreachable:NoExecute for 300s
+Events:
+  Type    Reason     Age   From                    Message
+  ----    ------     ----  ----                    -------
+  Normal  Scheduled  34s   default-scheduler       Successfully assigned default/k8s-demo-app-pod to k8s-worker-01
+  Normal  Pulled     31s   kubelet, k8s-worker-01  Container image "mleitz1/k8s-demo-app:arm32" already present on machine
+  Normal  Created    31s   kubelet, k8s-worker-01  Created container k8s-demo-app
+  Normal  Started    30s   kubelet, k8s-worker-01  Started container k8s-demo-app
+```
+
+##### kubectl log
+
+```
+$ kubectl log k8s-demo-app-pod
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::        (v2.1.6.RELEASE)
+
+2019-07-15 20:46:40.675  INFO 1 --- [           main] c.m.blog.k8s.K8sHostnameApplication      : Starting K8sHostnameApplication v0.0.1-SNAPSHOT on k8s-demo-app-pod with PID 1 (/k8s-demo-app.jar started by root in /)
+2019-07-15 20:46:40.694  INFO 1 --- [           main] c.m.blog.k8s.K8sHostnameApplication      : No active profile set, falling back to default profiles: default
+2019-07-15 20:46:48.569  INFO 1 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data repositories in DEFAULT mode.
+2019-07-15 20:46:48.999  INFO 1 --- [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 357ms. Found 1 repository interfaces.
+2019-07-15 20:46:58.119  INFO 1 --- [           main] trationDelegate$BeanPostProcessorChecker : Bean 'org.springframework.trans
+
+... snip ...
+
+2019-07-15 20:47:41.159  INFO 1 --- [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 8080 (http) with context path ''
+2019-07-15 20:47:41.185  INFO 1 --- [           main] c.m.blog.k8s.K8sHostnameApplication      : Started K8sHostnameApplication in 63.812 seconds (JVM running for 67.615)
+```
+
+##### Services
+
+Here's the corresponding manifest for the service.
+
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: k8s-demo-app-svc                                # The name of this service.  Much like the pod's name this is how you'll refer to the service to the cluster.
+spec:
+  type: LoadBalancer
+  selector:
+    app: k8s-demo-app                                   # The application's name you specified in the pod's manifest.
+  ports:
+    - name: http                                        # You want http access using TCP.
+      protocol: TCP
+      port: 80                                          # The service will listen for inbound connections on port 80.
+      targetPort: 8080                                  # And forward them to the pod which is listening on port 8080.  The ports the applications are listening on are defined by the Docker container.  You can find them on the corresponding Docker hub page or in the Dockerfile that Docker uses to build the container image.
+  externalIPs:
+    - 192.168.2.10                                      # This is the externally facing ip address of the master node.  It's the ip address that the cluster is exposing to the outside world.  There might be a way to alias this, but as of this writing I don't know it.
+```
+
+You'll notice that you didn't specify any ip addresses of the pod itself. Kubernetes will handle looking that up. You just need to specify the name of the pod you're exposing using app.
+
+By running the appropriate Kubernetes command, k8s will create a service to facilitate communication with the pod.
+
+```
+kubectl apply -f https://raw.githubusercontent.com/mikeleitz/k8s-blog/master/01_pods-and-services/rpi-cluster/02_k8s-demo-app-kubernetes_service-only.yaml
+```
+
+You can run this directly from the github url or save the contents to a file, which ever you prefer.
+
+By running this Kubernetes command on the master node, k8s will deploy this as a service to an available node.
+
+That's it. Unless you see an error using the below commands, your service is all set. You can now verify it.
+
+Use curl or your browser and navigate to the ip address specified in the external ip address section of the service manifest and port 80.
+
+```
+# Get hostname that the pod is running on
+$ curl http://192.168.2.10:80/hostname
+k8s-demo-app-pod
+
+# Get a guid from the application
+$ curl http://192.168.2.10:80/guid
+8aeed6b1-1e4c-4730-9ad4-26ab262fe248
+```
+
+That's all there is to it.
+
+#### Service Investigation tools
+
+You can use a lot of the same commands to look at your services.
+
+##### kubectl get
+
+```
+$ kubectl get svc
+NAME                  TYPE           CLUSTER-IP     EXTERNAL-IP    PORT(S)        AGE
+k8s-demo-app-svc      LoadBalancer   10.96.123.15   192.168.2.10   80:31942/TCP   3s
+```
+
+##### kubectl describe
+
+```
+$ kubectl describe svc k8s-demo-app-svc
+Name:                     k8s-demo-app-svc
+Namespace:                default
+Labels:                   <none>
+Annotations:              kubectl.kubernetes.io/last-applied-configuration:
+                            ,"spec":{"externalIPs":["...
+Selector:                 app=k8s-demo-app
+Type:                     LoadBalancer
+IP:                       10.96.123.15
+External IPs:             192.168.2.10
+Port:                     http  80/TCP
+TargetPort:               8080/TCP
+NodePort:                 http  31942/TCP
+Endpoints:                10.44.0.3:8080
+Session Affinity:         None
+External Traffic Policy:  Cluster
+Events:                   <none>
+```
+
+#### Wrap up on pods and services
+
+We've covered the basics on pods and services. At this point you should understand the roles of pods and services to the Kubernetes cluster.
+
+ * Pods are the applications you want to run.
+ * Services provide a consistent access point to your applications.
+
+This is the absolute basics. From here we can move on to more complicated concepts and deployment scenarios.
+
+Hopefully this will help you get started. I always feel if I can get a basic setup running, I can then pivot to the more complicated topics. I just need a baseline to work from.
+
+If you have any questions or run into any problems getting it running, feel free to hit me up on X https://x.com/mleitz1.
