@@ -1,0 +1,138 @@
+import { ArticleLayout } from '@/components/ArticleLayout'
+import Image from 'next/image'
+
+export const article = {
+  author: 'Leitz',
+  date: '2021-05-27',
+  title: 'Stop messing with tar and switch to atool',
+  description:
+    'No need to memorize how to use different archive tools. atool rules them all.',
+}
+
+export const metadata = {
+  title: article.title,
+  description: article.description,
+}
+
+export default (props) => <ArticleLayout article={article} {...props} />
+
+## Overview
+
+There are many file archive options. Each archive option has their own specialized commands to operate on them: create, list, extract, etc.
+
+Back in 2001, Oskar Liljeblad created one single tool to operate in a consistent manner on all popular archive formats.
+
+It's called atool and it's amazing.
+
+## Archive support
+
+atool supports all major archive and compression schemes including various combinations of tar+zip.
+
+
+## Standardization
+
+atool standardizes the behavior so no matter what archive you're dealing with its creation and extraction behaves the same way.
+
+Have you ever extracted a tarball and had 1000 files scattered in the current directory? I've done that. Many times. It sucks.
+
+With atool, extracting a .tar archive will automatically put the extracted files into a subdirectory. No more 52 card pickup.
+
+## Tutorial
+
+I'll show you how to 
+
+ * create an archive
+ * list its contents
+ * extract the files
+ * change the archive from one format to another.
+
+```bash
+mkdir atool-tutorial
+
+cd atool-tutorial
+
+echo 'hello' >> a.txt
+echo 'good bye' >> b.txt
+
+# Create a .zip file containing these two files
+
+apack my-archive.zip a.txt b.txt
+
+# Now have file called my-archive.zip
+# Look inside the archive using atool's als command
+
+als my-archive.zip
+
+# Double check the file using 'file' command
+
+file my-archive.zip
+
+# my-archive.zip: Zip archive data, at least v1.0 to extract
+
+# Test extract
+rm a.txt
+rm b.txt
+
+ls
+
+# Only the archive left in the directory
+
+aunpack my-archive.zip
+
+# Creates a subdirectory and extracts files to it
+
+ls -lahrt my-archive
+
+# Remove extracted directory, keeping the zip file
+
+rm -rf my-archive
+
+# Use atool to change the archive from .zip to .tar.gz
+
+arepack my-archive.zip my-archive.tar.gz
+
+ls -lahrt
+
+# New file is .gz
+
+file my-archive.tar.gz
+
+# Demonstrate using gunzip/tar on this new file -- the old way
+
+gunzip my-archive.tar.gz
+tar xf my-archive.tar
+
+# Files extracted to current directory, yuck!
+
+ls -lahrt
+
+# Remove the extracted files and tarball
+rm a.txt
+rm b.txt
+rm my-archive.tar
+
+# Try the tar.gz again, but using only atool
+
+arepack my-archive.zip my-archive.tar.gz
+aunpack my-archive.tar.gz
+
+ls -lahrt
+
+# Notice how atool didn't extract the tar.gz to current directory.
+# atool created a specific subdirectory for it. Nice!
+
+```
+
+## Wrap up
+
+Get out of archive hell.
+
+Stop using narrow commands like tar, gzip, gunzip, zip, bzip, etc. Too much to memorize.
+
+There's even a [tar comic from xkcd](https://xkcd.com/1168/) that highlights how awful the tar commands is.
+
+Up your productivity by using higher level commands like atool.
+
+One command to rule all archives!
+
+ If you have any problems, contact me on X at https://x.com/mleitz1
