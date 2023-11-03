@@ -1,0 +1,218 @@
+import { ArticleLayout } from '@/components/ArticleLayout'
+import Image from 'next/image'
+
+export const article = {
+  author: 'Leitz',
+  date: '2019-02-11',
+  title: 'Database Performance - Datatypes',
+  description:
+    'Supercharge your relational database performance by understanding how to pick perfect datatypes. Impress your colleagues with these relational database secrets!',
+}
+
+export const metadata = {
+  title: article.title,
+  description: article.description,
+}
+
+export default (props) => <ArticleLayout article={article} {...props} />
+
+When it comes to increasing database performance the first aspect a developer should consider is their use of datatypes.
+
+At the time of writing, MySQL has roughly [30 built in basic datatypes](https://dev.mysql.com/doc/refman/8.0/en/data-types.html). The developer has several choices for each type of data: numeric, time, or string. Since MySQL doesn’t support user defined datatypes, it’s important to be smart and precise when deciding which one to use.
+
+Given that there are so many datatypes how do you know which one to choose? It’s confusing.
+
+## Need to Know
+
+Everything on this wiki applies to MySQL's InnoDB storage engine. This knowledge, however, can be generalized to most other relational databases.
+
+## The Golden Rule
+
+It’s hard if not impossible to come up with a bunch of specific MySQL performance implementation rules that you should always follow. Most of the time each database will be its own performance puzzle. When creating high performance schemas and SQL queries, you’ll need to understand the fundamental principles and apply those in a case by case basis.
+
+There is one rule that’s always true, however. It’s the Golden Rule of MySQL performance.
+
+MySQL Golden Rule: [Smaller is always faster](https://dev.mysql.com/doc/refman/8.0/en/storage-requirements.html). Strive for smaller columns, smaller rows, and smaller tables.
+
+Byte size is important and it’s something you’ll need to consider for each column in every table. A smaller byte size can be the difference between your index fitting in RAM or it having to be banished to live way out on the disk. Smaller helps MySQL examine table rows quickly to find what you’ve asked for. Bytes are performance currency and you shouldn't waste them.
+
+## Byte Size for First Class Datatypes
+
+Below are the most common datatypes you’ll use. Once you can compute column sizes for each of these, it will be easy for you to compute the lesser used ones I’ve omitted. 
+
+### BIT
+
+#### USAGE
+
+Bits are used as boolean types. In some extreme cases, you can use also use them to store small numbers in binary format. If you’re looking to squeeze every possible byte out of the database and for example want to store a number from 0 to 7, you can define the column as bit(3). Why would you want all the extra hassle? Maybe you need to store 10 billion rows with several columns containing small numbers and need every bit you can get. I doubt you’ll ever do this, but this is the type of creative thinking that’s required to solve tricky performance problems.
+
+#### STORAGE REQUIREMENTS
+
+(M+7)/8 bytes where M is the total number of bits used in the table.
+
+If the table has one column with one **bit** it requires 1 **byte** of storage. M = 1 in the above formula.
+
+If the table has two columns with one **bit** each it still requires 1 **byte** of storage. M = 2 in the above formula.
+
+If the table has 9 columns with one **bit** each it requires 2 **byte** of storage. M = 9 in the above formula.
+
+If the table has 10 columns with one **bit** each it still requires 2 **byte** of storage. M = 10 in the above formula.
+
+### NULL
+
+#### USAGE
+
+NULL isn’t technically a datatype, but it’s in this section because declaring a column nullable requires extra storage space. Don't needlessly declare columns as nullable. It's wasteful.
+
+#### STORAGE REQUIREMENTS
+
+NULL requires at least an extra bit per column for storage in InnoDB. NOTE: As far as I can tell, it’s one bit per column like the bit(1) datatype above. Indexes might add 1 byte per column, however. Though even that’s unclear.
+
+#### ADDITIONAL NOTES
+
+Although not performance related I feel the need to call out a SQL anti-pattern I see from time to time.
+
+#### USE
+
+```
+SELECT COUNT(*) FROM <table_name> -- this counts the total number of rows in a table.  Most likely what you want.
+```
+
+#### AVOID
+
+```
+SELECT COUNT(<column_name>) from <table_name> -- counts the total number of rows with a non-null value in <column_name> from the table.  Most likely not what you want. Further, this is in no way faster than select count(*)
+```
+
+### VARCHAR
+
+#### USAGE
+
+Varchars are used to store variable length string values. In the varchar’s declaration, you need to specify the maximum string length in characters (not bytes) that the column will hold. e.g. varchar(255) allows for the storage of a string with at most 255 characters. 
+
+MySQL has [6 different character encodings](https://dev.mysql.com/doc/refman/8.0/en/charset-unicode.html) to choose from. Typically you will want to choose ‘utf-8' encoding when storing user visible data, since it supports extended character sets for many of the world’s written languages. You can choose ‘latin1’ encoding when storing string values where only the typical ASCII characters are needed. The character encoding can be specified at the table level or the column level.
+
+STORAGE REQUIREMENTS
+
+A varchar is truly a variable byte size character datatype. It’s impossible to calculate the exact column byte count ahead of time, since you’ll need to populate a row’s cell with data in order to make the calculation. Even though an exact size can’t be determined ahead of time, you should at least calculate the minimum and maximum byte sizes. If you have a good idea of the data’s average length, you should also estimate the average byte size requirements too. 
+
+The size calculation takes into account 3 different parts.
+
+ 1. The size of the string in characters.
+ 2. The length of the column. In addition to the characters themselves, MySQL stores their length as an unsigned numeric. MySQL uses 1 byte for up to 255 characters, 2 bytes if the string is longer than 255, etc.
+  * For instance if you have a string that’s length 500, it requires 2 bytes to store then length.  
+ 3. The character encoding specified on the table.
+  * ‘latin1’ is 1 byte per character.
+  * ‘utf8’ is 3 bytes per character. See other notes below for more details.
+
+It is best to illustrate the varchar with some examples.
+
+#### Assume datatype : varchar(255) with ‘latin1’ encoding
+
+The string ‘hello’ would need 1 byte for the length and 5*1=5 bytes for the actual string for a total of 6 bytes to store ‘hello’.
+
+The empty string ‘’ would be 1 byte to store for the length and 0*1=0 for the actual string. A total of 1 byte.
+
+#### Assume datatype : varchar(255) with ‘utf8’ encoding
+
+The string ‘hello’ would need 1 byte for the length and 5*3=15 bytes for the actual string for a total of 16 bytes to store ‘hello’.
+
+The empty string ‘’ would be 1 byte to store for the length and 0*3=0 for the actual string. A total of 1 byte.
+
+#### Assume datatype : varchar(512) with ‘utf8’ encoding
+
+The string ‘hello’ would need 2 bytes for the length and 5*3=15 bytes for the actual string for a total of 17 bytes to store ‘hello’.
+
+‘utf8’ can really ratchet up the byte size of a column. Be careful and know why you need to use an encoding with larger overhead than ‘latin1'.
+
+### TEMPORAL
+
+#### USAGE
+
+Temporal refers to any column that stores time or date information. 
+
+The date type represents any calendar date from 1001-01-01 to 9999-12-31. This type does not include any hours, minutes, or seconds.
+
+The timestamp type represents an instant in time: the date on the calendar down to microseconds. Timestamp can represent instants from 1970-01-01 00:00:01.000000 to 2038-01-19 03:14:07.999999.
+
+The datetime type represents the same type of information as the timestamp but datetime can represent a larger range of instants. Datetime can represent instants from 1000-01-01 00:00:00.000000 to 9999-12-31 23:59:59.999999.
+
+#### STORAGE REQUIREMENTS
+
+The [storage requirements for temporal types](http://dev.mysql.com/doc/internals/en/date-and-time-data-type-representation.html) has changed slightly starting with MySQL version 5.6.4. Below describes the newer representations.
+
+timestamp - 4 bytes + optional fractional seconds storage, 1, 2, or 3 bytes depending on the precision
+
+datetime - 5 bytes + optional fractional seconds storage, 1, 2, or 3 bytes depending on the precision
+
+date - 3 bytes
+
+On certain temporal datatypes you can optionally specify up to 6 digits of precision for fractional seconds at the cost of between 1 to 3 additional bytes per row. Make sure you pick the appropriate temporal type for the time granularity you need. If you pick the wrong one, you’ll end up allocating bytes you’ll never need.
+
+timestamp(0) - means no fractions seconds.
+
+timestamp(1) - means one digit. i.e. 2015-06-18 15:27:05.2
+
+timestamp(6) - means all 6 digits of precision. i.e. 2015-06-18 15:27:05.234568
+
+timestamp - without any parenthesis it defaults to timestamp(0)
+
+If you don’t need fractional seconds, which you most likely don’t, make sure you specify the timestamp as timestamp(0). Otherwise, you’ll waste bytes on precision you don’t need.
+
+If you want to store the timestamp of when the record was created (created_on), consider using timestamp(0). You save 3 bytes over the more precise timestamp(6), and the extra precision won't likely be relevant.
+
+### ENUM
+
+#### USAGE
+
+Often times in developing an application we need to identify a small set of possible values for a given variable. An enum. When this enum needs to be persisted to the database, people often use a varchar as the database’s type. By referring to the earlier section on storing varchars, it’s easy to tell how wasteful storing enums as varchars is.
+
+MySQL enums are great space savers but they have some idiosyncrasies with regard to ORDER BY. If you were to use varchars to store your enum and then issue an ORDER BY, the values would be sorted alphabetically. ORDER BY for MySQL enums are sorted in their specified order.
+
+So for example, if you have a java enum MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY:
+
+Storing it in MySQL as varchar(255) an ORDER BY will produce the alphabetical ordering: FRIDAY, MONDAY, SATURDAY, SUNDAY, THURSDAY, TUESDAY, WEDNESDAY
+
+Storing it in MySQL as an enum(‘MONDAY’, ’TUESDAY’, ‘WEDNESDAY’, ’THURSDAY’, ‘FRIDAY’, ’SATURDAY’, ’SUNDAY’) an ORDER BY will produce the enum order: MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY 
+
+#### STORAGE REQUIREMENTS
+
+enums are similar to the bit datatype. The amount of storage required is related to the number of enum values. One byte of storage gets you 255 possible enum values. Likely all you’ll ever need.
+
+In the above example, storing the enum values as a varchar uses between 7 and 10 bytes with latin1 encoding and between 19 and 28 bytes with utf-8. Using an enum datatype would always use 1 byte.
+
+### NUMERICS
+
+#### USAGE
+
+Numerics represent numbers and are straight forward. There are two categories: integer and floating point. Their range and byte size requirements are detailed in the MySQL documentation.
+
+#### STORAGE REQUIREMENTS
+
+MySQL provides options for numerics starting at 1 byte and going all the way up to 8 bytes. It’s easy to get lazy and make all the columns either int or bigint but resist this impulse. Determine what the applicable range is and choose the correct size. Use unsigned if the numbers you’re storing are always positive or zero.
+
+One last note about numerics. MySQL lets you add an optional parameter when declaring a numeric type. It looks like a varchar in that regard but the optional parameter doesn’t work like varchar’s at all.
+
+For example:
+
+ * my_number int(10)
+ * my_number int(7)
+ * my_number int(2)
+
+The (10), (7), and (2) have no impact on how MySQL stores the number. It still requires the full 4 bytes to store each of these columns. The optional parameter is only used by the MySQL client. It uses this number to know how much space on the screen to reserve when displaying any query results to you. It doesn’t save any space or provide any help performance in any way.
+
+#### OTHER NOTES
+
+Any given row in a MySQL table is limited to 65,535 bytes. Datatypes like smalltext, text, longtext, blob, longblob, etc are not included for this calculation.
+
+UTF-8 string encoding doesn’t always have to be 3 bytes per character. MySQL has a configuration setting that allows for variable storage up to 3 bytes. ROW_FORMAT=COMPACT, the default for INNODB, enables variable length utf8 strings. ROW_FORMAT=REDUNDANT forces the fixed 3 bytes per character.
+
+An entry in an index can be at most 767 bytes.
+
+If you have any problems, contact me on X at https://x.com/mleitz1
+
+## References
+
+ 1. [https://dev.mysql.com/doc/refman/8.0/en/storage-requirements.html](https://dev.mysql.com/doc/refman/8.0/en/storage-requirements.html)
+ 2. [http://dev.mysql.com/doc/refman/8.0/en/data-types.html](http://dev.mysql.com/doc/refman/8.0/en/data-types.html)
+ 3. [http://dev.mysql.com/doc/refman/8.0/en/charset-unicode.html](http://dev.mysql.com/doc/refman/8.0/en/charset-unicode.html)
