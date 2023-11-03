@@ -1,0 +1,163 @@
+import { ArticleLayout } from '@/components/ArticleLayout'
+import Image from 'next/image'
+
+export const article = {
+  author: 'Leitz',
+  date: '2021-05-14',
+  title: 'Custom Spring Annotations',
+  description:
+    'Elevate your custom Java annotations to functional masterpieces. This example shows you the way!',
+}
+
+export const metadata = {
+  title: article.title,
+  description: article.description,
+}
+
+export default (props) => <ArticleLayout article={article} {...props} />
+
+On their own Java annotations are simple data structures that are attached to Java classes, variables, methods and their arguments. By incorporating AspectJ, however, you can add any behavior you want to your custom annotations.
+
+This blog discusses the [annotation implementation](https://github.com/mikeleitz/annotation-example) that's located out on my GitHub.
+
+## Why AOP?
+
+[Aspect Oriented Programming](https://en.wikipedia.org/wiki/Aspect-oriented_programming) is great when you want to add some cross-cutting behavior to your application. AOP is useful when implementing behavior that is difficult to model with traditional object-oriented approaches: inheritance, composition, etc . Features like securing endpoints, standardizing logging, performance profiling, etc are good candidates for AOP. Once you see how easy it is to add this to your application, you're likely to notice additional uses for it.
+
+If you're new to the concept, AOP terminology is summed up well in this SO question/answer: [Spring AOP: What's the difference between JoinPoint and PointCut?](https://stackoverflow.com/questions/15447397/spring-aop-whats-the-difference-between-joinpoint-and-pointcut)
+
+If you want to know more about Aspect Oriented Programming and AspectJ, it's best to research using Google.
+
+## Why annotations?
+
+Even though Aspect Oriented Programming can provide meaningful benefits to your application, developers tend to shy away from using AOP due to the risk of collateral damage. Given the way AOP operates and how it's traditionally configured, it's possible that a developer will specify a pointcut too broadly and a piece of advice will get executed inadvertently producing undesired results.
+
+You can mitigate this risk by using annotations as your pointcut.
+
+Then the advice only executes when there's an annotation on a class, method, field, argument, etc. It's also easy to write AOP advice this way and add to your codebase. So if you're looking to add some behavior that's suitable to AOP, annotations are a good way to ensure the advice only gets executed when you want it to.
+
+In addition to the technical benefit, it's also a self-documenting feature. Developers can see the annotations in the code and realize some side-effecting happens there.
+
+The limitation to using this annotation approach to AOP, is that you can't simply update a configuration file to add new AOP behavior. You need to edit the source code itself to add the annotation. If you want to run your application with some performance profiling using AOP, for example, you don't want to add annotations for that. You just want to update a configuration file somewhere. That way when you're done with the profile, you can simply remove the lines in the configuration file.
+
+So this annotation approach won't be appropriate for all AOP use-cases.
+
+These aren't mutually exclusive implementations, however, and you can run both annotations and traditional AOP configurations in the same application.
+
+## Why AspectJ?
+
+### ASPECTJ VS SPRING
+
+You have two options for configuring AOP annotations: AspectJ or Spring.
+
+If the developer uses Spring to do the AOP work, only objects created by the Spring container will have the AOP behavior. If you have an object created by using 'new', the pointcut won't be recognized by the application and the advice won't fire.
+
+For example, if you have a setup that uses Spring to configure the AOP behavior:
+
+```
+public class MyObject {
+   @MyAnnotation
+   public void doIt() {
+      // Do stuff
+   }
+}
+
+// Elsewhere
+...
+
+@Autowired MyObject _myObject;
+
+...
+
+    /*
+    AOP advice will fire,
+    since the object was
+    created by Spring
+    via Autowiring.
+    */
+    _myObject.doIt();
+...
+
+
+   MyObject myNewObject = new MyObject();
+
+    /*
+    AOP advice will *not* fire,
+    since it wasn't created by
+    Spring.  It was created
+    by new keyword.
+    */
+
+   myNewObject.doIt();
+```
+
+If you use AspectJ to configure the AOP, however, the AOP advice will fire in both cases.
+
+I recommend using AspectJ, which is detailed next. Either option is easy to configure but AspectJ allows the AOP behavior to work with all objects: objects created through the Spring container and objects created using new.
+
+## AspectJ Configuration
+
+### MAVEN
+
+In order for AspectJ to work, add the following plugin and dependency to the pom.xml.
+
+```
+<plugins>
+   <plugin>
+      <groupId>org.codehaus.mojo</groupId>
+      <artifactId>aspectj-maven-plugin</artifactId>
+      <version>1.8</version>
+      <configuration>
+         <complianceLevel>${java.version}</complianceLevel>
+         <source>${java.version}</source>
+         <target>${java.version}</target>
+      </configuration>
+      <executions>
+         <execution>
+            <goals>
+               <goal>compile</goal>
+            </goals>
+         </execution>
+      </executions>
+   </plugin>
+</plugins>
+
+<dependencies>
+   <dependency>
+      <groupId>org.aspectj</groupId>
+      <artifactId>aspectjrt</artifactId>
+      <version>1.8.7</version>
+   </dependency>
+</dependencies>
+```
+
+This addition to the project's pom.xml is all that's required to enable AOP in the application. During the build, AspectJ will compile in your aspects. Anytime the applications comes across an annotation configured as a pointcut, the advice will be executed.
+
+It's pretty simple to enable AOP in your project.
+
+## Implementation Details
+
+### HOW IT WORKS
+
+At compile time, AspectJ will wrap these annotations with AOP advice: see [com.mikeleitz.example.annotation.MyExampleAnnotationAspect](https://github.com/mikeleitz/annotation-example/blob/master/src/main/java/com/mikeleitz/example/annotation/MyExampleAnnotationAspect.java).
+
+The aspect's pointcut is any method annotated with @MyExampleAnnotation. When any of these methods are invoked, the application takes a detour into [com.mikeleitz.example.annotation.MyExampleAnnotationAspect->myExampleAnnotationAdvice](https://github.com/mikeleitz/annotation-example/blob/b94def9cd3606e787c8c08947418024947d51b63/src/main/java/com/mikeleitz/example/annotation/MyExampleAnnotationAspect.java#L46).
+
+[myExampleAnnotationAdvice](https://github.com/mikeleitz/annotation-example/blob/b94def9cd3606e787c8c08947418024947d51b63/src/main/java/com/mikeleitz/example/annotation/MyExampleAnnotationAspect.java#L46)'s implementation is simple. It looks at the annotation's severity attribute. If the severity is either CRITICAL or HIGH, it calls a separate service.
+
+You could have anything in the this method. Logging, security, data validation, etc.
+
+Note: The service call to [NotifyService](https://github.com/mikeleitz/annotation-example/blob/master/src/main/java/com/mikeleitz/example/service/NotifyServiceImpl.java) isn't necessary for the annotation AOP example. I included it for developers who use Spring but choose to use the AspectJ AOP configuration described above.
+
+In order to properly wire the Spring bean, your aspect ([MyExampleAnnotationAspect](https://github.com/mikeleitz/annotation-example/blob/master/src/main/java/com/mikeleitz/example/annotation/MyExampleAnnotationAspect.java)) needs to implement ApplicationContextAware and set the Spring beans though the setApplicationContext(..) method. If the develper chooses to use Spring to configure the AOP behavior, then the service could be wired via Spring's @Autowired annotation.
+
+## Summary
+
+In order to create behavioral annotations all you need to do is the following.
+
+ 1. Add AspectJ dependencies and the AspectJ build plugin to the pom.xml.
+ 2. Write your custom annotation with any variables you need: see [com.mikeleitz.example.annotation.MyExampleAnnotation](https://github.com/mikeleitz/annotation-example/blob/master/src/main/java/com/mikeleitz/example/annotation/MyExampleAnnotation.java).
+ 3. Write AOP aspect with appropriate Pointcut and advice: [com.mikeleitz.example.annotation.MyExampleAnnotationAspect](https://github.com/mikeleitz/annotation-example/blob/master/src/main/java/com/mikeleitz/example/annotation/MyExampleAnnotationAspect.java).
+ 4. Mark any method, field, argument, etc with the annotation created in step 3.
+
+ If you have any problems, contact me on X at https://x.com/mleitz1
