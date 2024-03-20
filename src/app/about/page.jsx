@@ -39,7 +39,7 @@ function MailIcon(props) {
 export const metadata = {
   title: 'About',
   description:
-    'I’m Mike Leitz. I live in Nashville, where I help software businesses solve their hardest problems.',
+    'I’m Mike Leitz. I live in Nashville, and I help businesses solve their hardest problems with software.',
 }
 
 export default function About() {
@@ -58,14 +58,24 @@ export default function About() {
         </div>
         <div className="lg:order-first lg:row-span-2">
           <h1 className="text-4xl font-bold tracking-tight text-zinc-800 dark:text-zinc-100 sm:text-5xl">
-            I'm Mike Leitz. I live in Nashville, where work in software solving the hardest problems in business.
+            I’m Mike Leitz
           </h1>
+          <br></br>
+          <h1 className="text-4xl font-bold tracking-tight text-zinc-800 dark:text-zinc-100 sm:text-5xl">I live in
+            Nashville</h1>
+          <br></br>
+          <h1 className="text-4xl font-bold tracking-tight text-zinc-800 dark:text-zinc-100 sm:text-5xl">I work with software</h1>
+
           <div className="mt-6 space-y-7 text-base text-zinc-600 dark:text-zinc-400">
             <p>
-            My entire life I've been obsessed with technology and have worked 20+ years professionally in all aspects of software creation.
+              My entire life I've been obsessed with technology and have worked 20+ years professionally in all aspects
+              of software creation.
+
+              I help businesses solve their hardest problems with software
             </p>
             <p>
-            I'm the creator of <a href="https://LicketyScript.app">Lickety Script</a> — a better way to create Bash scripts.
+              I'm the creator of <a href="https://LicketyScript.app">Lickety Script</a> — a better way to create Bash
+              scripts.
             </p>
           </div>
         </div>

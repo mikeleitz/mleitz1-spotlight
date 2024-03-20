@@ -177,7 +177,7 @@ function Resume() {
   let resume = [
     {
       company: 'Warner Bros. Discovery',
-      title: 'Senior Developer',
+      title: 'Staff Software Engineer',
       logo: wbd,
       start: '2020',
       end: {
@@ -272,7 +272,7 @@ export default async function Home() {
       <Container className="mt-9">
         <div className="max-w-2xl">
           <h1 className="text-4xl font-bold tracking-tight text-zinc-800 dark:text-zinc-100 sm:text-5xl">
-            Software manager, developer, and problem solver.
+            Software Manager, Staff Software Engineer, and problem solver.
           </h1>
           <p className="mt-6 text-base text-zinc-600 dark:text-zinc-400">
             I’m Leitz, a software guy who's done every job in tech. Based in Nashville, TN. I help people understand the tech world by sharing wisdom acquired in my 25 years of professional delopment experience.
