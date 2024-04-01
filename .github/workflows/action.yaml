@@ -31,17 +31,12 @@ jobs:
             creds: ${{ secrets.AZURE_CREDENTIALS }}
 
         # Build and deploy the container app
-        - name: Build and deploy Container App
-          uses: azure/container-apps-deploy-action@v0
+        - name: 'Build and push image'
+          uses: azure/docker-login@v1
           with:
-            repository: containerhouse.azurecr.io
-            registryUrl: containerhouse.azurecr.io
-            appSourcePath: ${{ github.workspace }}
-            acrName: containerhouse
-            acrUsername: ${{ secrets.REGISTRY_USERNAME }}
-            acrPassword: ${{ secrets.REGISTRY_PASSWORD }}
-            containerAppName: mikeleitz-website
-            containerAppEnvironment: prod
-            resourceGroup: mikeleitz-website-rg
-            imageToBuild: containerhouse/mikeleitz-website:latest
-            dockerfilePath: ./Dockerfile
+            login-server: ${{ secrets.REGISTRY_SERVER }}
+            username: ${{ secrets.REGISTRY_USERNAME }}
+            password: ${{ secrets.REGISTRY_PASSWORD }}
+        - run: |
+            docker build . -t ${{ secrets.REGISTRY_SERVER }}/mikeleitz-spotlight:latest
+            docker push ${{ secrets.REGISTRY_SERVER }}/mikeleitz-spotlight:latest
