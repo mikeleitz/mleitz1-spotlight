@@ -34,6 +34,7 @@ jobs:
         - name: Build and deploy Container App
           uses: azure/container-apps-deploy-action@v0
           with:
+            repository: containerhouse.azurecr.io
             registryUrl: containerhouse.azurecr.io
             appSourcePath: ${{ github.workspace }}
             acrName: containerhouse
