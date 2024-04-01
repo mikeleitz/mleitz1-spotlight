@@ -15,7 +15,7 @@ on:
 jobs:
   # Job run image.
     build:
-      runs-on: mcr.microsoft.com/devcontainers/typescript-node
+      runs-on: ubuntu-latest
 
    # Steps that need to happen in this job run.
       steps:
