@@ -13,6 +13,32 @@ const nextConfig = {
         destination: '/articles/decompile-java-class-files',
         permanent: true,
       },
+      {
+        source: '/blog/2019/11/21/tmux-terminal-emulator-overview-with-demo',
+        destination: '/articles/tmux-the-terminal-emulator',
+        permanent: true,
+      },
+      {
+        source: '/blog/2019/7/8/create-your-own-personal-kubernetes-cluster-using-raspberry-pis',
+        destination: '/articles/kubernetes-basics',
+        permanent: true,
+      },
+      {
+        source: '/blog/KubernetesBasics',
+        destination: '/articles/kubernetes-basics',
+        permanent: true,
+      },
+      {
+        source: '/blog/PriceOfProductivity',
+        destination: '/articles/price-of-productivity',
+        permanent: true,
+      },
+      {
+        source: '/blog',
+        destination: '/articles',
+        permanent: true,
+      },      
+      
       // Wildcard path matching
       // {
       //   source: '/blog/:slug',
