@@ -11,16 +11,14 @@ const projects = [
   {
     name: 'Lickety Script',
     description:
-      'A better way to create Bash Scripts.',
+      'Lickety Script is a free web based tool to help you create Bash scripts quickly. Specify inputs with their validations, help text, switches, and more. Get up your Bash script up and running in seconds!',
     link: { href: 'https://licketyscript.app', label: 'licketyscript.app' },
-    logo: licketyScript
-
-    ,
+    logo: licketyScript,
   },
   {
     name: '10 Rules for Devs',
     description:
-      'The 10 crucial rules of software development..',
+      'The mistakes that took me decades to learn, you can learn in minutes. 10 crucial rules of software development.',
     link: { href: 'https://get.10rulesfordevs.com', label: '10rulesfordevs.com' },
     logo: tenRules,
   },
@@ -34,7 +32,7 @@ const projects = [
   {
     name: 'Bash Swipe',
     description:
-      'Create Bash scripts easily.',
+      'Leitz\'s Bash Swipe file contains all the tips and tricks I\'ve used over the past 20 years creating Bash scripts.  These are simple to use templates and examples that get you up and running quickly.  Tame the wild west that is Bash scripting into useable functions and easy to understand processing.',
     link: { href: 'https://bashswipe.com', label: 'bashswipe.com' },
     logo: bashSwipe,
   },
