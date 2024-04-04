@@ -1,0 +1,151 @@
+import { ArticleLayout } from '@/components/ArticleLayout'
+import Image from 'next/image'
+
+export const article = {
+  author: 'Leitz',
+  date: '2019-05-19',
+  title: 'Your Tech Interview Sucks - part 1',
+  description:
+    'Supercharge your development team by improving your interview process. Part 1 of 2.',
+}
+
+export const metadata = {
+  title: article.title,
+  description: article.description,
+}
+
+export default (props) => <ArticleLayout article={article} {...props} />
+
+## Overview
+
+During my 20 years in development I've been involved in countless technical interviews both as a candidate and as an interviewer. The interview process most companies use is flat out terrible.
+
+Given the current state of our industry, I don't even know what type of person the modern interview process even hopes to hire.
+
+As a general problem, it's hardly a new observation. Many members of our community more talented than I am have mentioned it and suggested improvements. When it comes to the topic of interviews, hopefully I can add something positive to our culture.
+
+This post doesn't cover all types of software jobs. In particular this blog entry will focus on interviewing candidates for a corporate software job. In other words, I'll focus these entries on hiring someone to help write boring business software. These entries are broad so feel free to take as little or as much of it as you like and fold it into your interview process.
+
+In this two part series, I'm going to write about my recommended process and what constitutes a good technical candidate.
+
+I'm also interested in your feedback. Not only criticisms of my approach but things you've done to help screen candidates. Feel free to post a comment below or hit my up on LinkedIn or Twitter.
+
+## Diversity
+
+### Your rockstar developer
+
+It's important to have a heterogeneous team. Look for people with a core set of relevant skills but with different backgrounds, experience, and complementary skills.
+
+One goal of selecting members for a development team is to create an environment where the team as a whole is greater than the sum of its parts.
+
+Can your team's productivity and software quality exceed the sum of its individual members?
+
+You can't accomplish this goal if you're always trying to hire a clone of your ‘rockstar' developer.
+
+One version of that unhelpful, egomaniac on your team is more than enough.
+
+### Yourself
+
+You should not only avoid exclusively hiring the 'rockstar' archetype, but also be wary of internal bias.
+
+When I was in college, I read a study that was done on professors. The study asked numerous professors the same question.
+
+"Can you describe the perfect student?"
+
+They asked all sorts of professors that question. I didn't matter if the teacher taught English, science, art, math, or economics. They all gave the **exact** same answer.
+
+Without exception, they all described the perfect student as having traits they themselves had as a student.
+
+For example if as a student the professor went to class every day, their answer was the perfect student has perfect attendance.
+
+If the professor happened to be great at taking tests, their answer was that the perfect student does well at taking tests.
+
+The wisdom here is hire people who can complement you and your team. Not duplicate existing team members.
+
+During the interview process, you need to be thinking about how can this person add to and enhance our team and our culture.
+
+## Failed approaches
+
+### Microsoft
+
+The questions Microsoft used to ask during an interview are famous among the software development community.
+
+There was even a [book written about it](https://www.amazon.com/Why-are-Manhole-Covers-Round/dp/1905823800/ref=sr_1_fkmr0_1?keywords=microsoft+manhole+cover&qid=1574701446&s=books&sr=1-1-fkmr0).
+
+Some typical questions they asked:
+
+ * Why are manhole covers round?
+ * How many ping-pong balls fit in a 747 airplane?
+ * How many barbers are there in Manhattan?
+
+The way these questions are supposed to work is that the candidate is presented with one and then starts to reason out some sort of solution.
+
+Maybe you ask the barber one.
+
+The candidate might try to estimate how many people are in Manhattan, then how often people get hair cuts, and come up with an answer.
+
+They might even give a more sophisticated answer with how much it costs to rent a barber space and people's willingness to live in Manhattan but commute out to a borough to get their haircut.
+
+Sounds like a great way to test someone's overall intelligence and critical thinking, right?
+
+WRONG!
+
+All these questions did was determine which candidates had previously heard the question and looked up the answer.
+
+As the candidate with the memorized answers is knocking them down left and right, the interviewer is left thinking they're interviewing some super-genius.
+
+# Leetcode and Algorithms
+
+A popular method of screening candidates is to use tools like Leetcode and Codility. These tools present a software problem, and the candidate has to 'live code' a working solution.
+
+Gathering questions posed by these services and doing live coding sessions can be beneficial to your interview process, and you should consider them.
+
+Be careful, however. Use these tools only to advance the discussion and not as a measure of the candidate's competence or a value.
+
+Why?
+
+There's a bit of a meme on Reddit.com about ‘grinding Leetcode' to get a job. Consider a situation where you're interviewing someone who's great at a Leetcode session. They're answering all the problems easily. What's really happening here?
+
+Much like the famous Microsoft questions described above if someone is cruising through this part of the interview, they've likely seen and practiced this specific situation for the interview.
+
+That problem you've put in front of them? They've memorized it and spit the answer back at you.
+
+In other words, the candidate is putting forth a version of themselves that doesn't exist.
+
+They're tricking you into thinking they're a great software developer.
+
+You're not even interviewing the person at this point. You're interviewing a simulacrum of the 'perfect' software developer. It's not real.
+
+The same goes for really specific whiteboard problems like various algorithms, which again can just be memorized. You might be asking why memorizing Leetcode or various algorithms has limited value.
+
+In the modern software world, memorization is worthless. Need something specific? Just Google and learn it in an hour. Critical thinking and other traits I'll discuss in part 2 are much, much more valuable for working on business software.
+
+Don't hire someone whose best skills can be replicated by a Google search.
+
+## Perspective
+
+### The Waffle House principle
+
+In this famous interview with software luminary Gabe Newell, he states the best person he's ever hired was a manager at a Waffle House.
+
+Think that guy could score well in a modern interview?
+
+"One of the first programmers at the company, his previous job was manager of a Waffle House. He was one of the most creative, and still is one of the most creative programmers in the industry." -- Gabe Newell
+
+https://www.polygon.com/2013/2/1/3941274/gabe-newell-steam-box-talk-ut
+
+Don't just hire people who can get through your question and answer gauntlet with the correct answers.
+
+Engage and discuss.
+
+Use technical questions and a starting point -- not a checklist.
+
+Hire great people not simulacrums or avatars.
+
+## Wrap up
+
+This is the end of part one in the series. I hope you've found this helpful.
+
+I don't expect everyone to agree on everything I wrote, but I do hope you can see a fresh perspective on the interview problem.
+
+In part two, I'll discuss the things I look for in a candidate.
