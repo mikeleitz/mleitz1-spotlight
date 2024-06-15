@@ -280,7 +280,7 @@ export default async function Home() {
           <div className="mt-6 flex gap-6">
             <SocialLink
               href="https://x.com/mleitz1"
-              aria-label="Follow on Twitter"
+              aria-label="mleitz1 on Twitter"
               icon={TwitterIcon}
             />
           </div>
