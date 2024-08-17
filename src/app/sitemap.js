@@ -108,5 +108,11 @@ export default function sitemap() {
             changeFrequency: 'weekly',
             priority: 0.6,
         },
+        {
+            url: 'https://mikeleitz.com/articles/logging-in-bash-scripts',
+            lastModified: new Date(),
+            changeFrequency: 'weekly',
+            priority: 1,
+        },
     ]
 }
