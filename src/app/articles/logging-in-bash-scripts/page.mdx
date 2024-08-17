@@ -1,0 +1,137 @@
+import { ArticleLayout } from '@/components/ArticleLayout'
+import Image from 'next/image'
+
+export const article = {
+  author: 'Leitz',
+  date: '2024-08-17',
+  title: 'How to use logging in your Bash scripts',
+  description:
+    'Create a small logging framework in your Bash scripts to help with output.',
+}
+
+export const metadata = {
+  title: article.title,
+  description: article.description,
+}
+
+export default (props) => <ArticleLayout article={article} {...props} />
+
+## Overview
+
+I like to write Bash scripts to handle repetitive tasks or tasks that have steps I can't seem to memorize.
+
+As a Java developer, I'm used to having a robust set of libraries and frameworks to help me build applications like logging. Bash scripts don't have most of those luxuries however.
+
+Here's how I implement logging with all my Bash scripts.
+
+## The Code
+
+Copy this code. Save it in a file called ./02-logging.sh. You can then execute the script and see the logging in action.
+
+```bash
+#!/usr/bin/env bash
+
+  # Swipe: This is how you can add logging to your bas script. It's easy
+  #        to add and the log levels map to syslog.
+
+# Specify all log levels
+#
+# These numbers and codes correspond to the syslog
+# standard: https://en.wikipedia.org/wiki/Syslog
+#
+# If you need to log some problem, typically you would use err or warn
+LOG_LEVELS=(
+  "0:emerg"
+  "1:alert"
+  "2:crit"
+  "3:err"
+  "4:warning"
+  "5:notice"
+  "6:info"
+  "7:debug"
+)
+
+# __VERBOSE specifies what level to log while the script runs. By default
+# it's 4, which means only warning, err, crit, and alert messages will be
+# echoed to standard out.
+#
+# You can use script inputs to adjust it up or down. If you use something
+# like --verbose, you would set __VERBOSE=7 to log all output up to and
+# including debug.
+# See 10-parse-input.sh on how verbose can be handled as input option.
+export __VERBOSE=4
+
+# log function takes in 2 args
+#
+# arg 1: the level to log output at. It's a number between 0 and 7.
+# arg 2: the message you want to log
+#
+# example:
+# .log 3 "This is an error message"
+# .log 4 "This is a warning message"
+# .log 7 "This is a debug message"
+function .log() {
+  local LEVEL=${1}
+  shift
+  if [ "${__VERBOSE}" -ge "${LEVEL}" ]; then
+    echo "[${LOG_LEVELS[$LEVEL]#*:}]" "$@"
+  fi
+}
+
+.log 3 "This is an error message with __VERBOSE=4"
+.log 4 "This is a warning message with __VERBOSE=4"
+.log 7 "This is a debug message with __VERBOSE=4"
+
+# When you run this script, notice how it doesn't log the debug message.
+# Since __VERBOSE=4, it only logs up to warning and won't print notice,
+# info, or debug.
+
+# By changing __VERBOSE=7, it will output all log severities
+
+echo
+echo "Changing __VERBOSE level to 7."
+echo
+
+__VERBOSE=7
+
+.log 3 "This is an error message with __VERBOSE=7"
+.log 4 "This is a warning message with __VERBOSE=7"
+.log 7 "This is a debug message with __VERBOSE=7"
+
+# Run this snippet
+
+# chmod +x 02-logging.sh
+# ./02-logging.sh
+
+# You should see the following output
+
+# [err] This is an error message with __VERBOSE=4
+# [warning] This is a warning message with __VERBOSE=4
+#
+# Changing __VERBOSE level to 7.
+#
+# [err] This is an error message with __VERBOSE=7
+# [warning] This is a warning message with __VERBOSE=7
+# [debug] This is a debug message with __VERBOSE=7
+
+# Now you can use logging in all your scripts to help
+# troubleshoot problems and let the user know of any
+# errors.
+
+```
+
+## Wrap Up
+
+This logging script comes straight out of my Bash Swipe file.
+
+Bash Swipe a set of Bash snippets I frequently use to help me build Bash scripts quickly.
+
+If you find this helpful, grab the rest of my Bash snippets here.
+
+[Get Bash Swipe](https://bashswipe.com)
+
+### Add your thoughts to the discussion
+
+[I have a level headed thought I want to share](https://x.com/mleitz1/status/1802110090650034502)
+
+[I have an totally unhinged thought you must know about, RIGHT NOW!](https://x.com/mleitz1/status/1802110090650034502)
