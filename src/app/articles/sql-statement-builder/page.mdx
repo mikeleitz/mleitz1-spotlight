@@ -3,10 +3,10 @@ import Image from 'next/image'
 
 export const article = {
   author: 'Leitz',
-  date: '2021-05-27',
-  title: 'Stop messing with tar and switch to atool',
+  date: '2024-09-15',
+  title: 'Start using SQL statements in your Java code',
   description:
-    'No need to memorize how to use different archive tools. atool rules them all.',
+    'You don\'t need to use ORM technologies like Hibernate for every project. Using SQL statements gives you more control over tuning and is a straight forward implementation.',
 }
 
 export const metadata = {
@@ -15,125 +15,128 @@ export const metadata = {
 }
 
 export default (props) => <ArticleLayout article={article} {...props} />
-
 ## Overview
 
-There are many file archive options. Each archive option has their own specialized commands to operate on them: create, list, extract, etc.
+I often write small apps that need minimal database interactions. Like all developers, I need to decide how my application is going to access the database.
 
-Back in 2001, Oskar Liljeblad created one single tool to operate in a consistent manner on all popular archive formats.
+Three popular Java options are frameworks like [HIbernate](https://hibernate.org), [JooQ](http://www.jooq.org), or writing custom raw SQL statements.
 
-It's called atool and it's amazing.
+## Disadvantages
 
-## Archive support
+### Hibernate's disadvantages
 
-atool supports all major archive and compression schemes including various combinations of tar+zip.
+1. Completely takes over your database access and object mapping in an opinionated way.
+2. Harder to tune the queries than it should be. By default Hibernate will fetch too much data from the database for typical use cases. You can tune the queries but doing so defeats the purpose of using Hibernate.
+3. Terrible for any batch processing. This is an extension of #2 above. If you do high volume batch processing, it's better to just write custom SQL queries and tune them for performance.
 
+### JooQ's disadvantages
 
-## Standardization
+1. Not a free product. It has a complex pricing scheme.
+2. Although I do pay for a lot of commercial software to help with my productivity, I never pay for libraries or frameworks.
 
-atool standardizes the behavior so no matter what archive you're dealing with its creation and extraction behaves the same way.
+### Raw SQL disadvantages
 
-Have you ever extracted a tarball and had 1000 files scattered in the current directory? I've done that. Many times. It sucks.
+1. In Java, it's awkward to write SQL strings. You end up writing lots of string concatenation with if-else statements to get it formatted correctly.
+2. No auto mapping the database results to objects.
+3. No SQL dialect selecting. You can't switch automatically from a MySQL database to a DB2 database, for example. I've never had to switch database vendors before but this is a feature most ORM frameworks boast about.
 
-With atool, extracting a .tar archive will automatically put the extracted files into a subdirectory. No more 52 card pickup.
+## Raw SQL
 
-## Tutorial
+For the small apps I write I like to use Raw SQL but I hate writing all the code that generates the SQL strings. I find it irritating and writing them makes me irrationally angry.
 
-I'll show you how to
+So what did I do?
 
- * create an archive
- * list its contents
- * extract the files
- * change the archive from one format to another.
+I wrote a small library called [sql-statement-builder](https://github.com/mikeleitz/sql-statement-builder) that constructs the SQL strings for you using the [builder pattern](https://en.wikipedia.org/wiki/Builder_pattern) and a [fluent API](https://en.wikipedia.org/wiki/Fluent_interface).
 
-```bash
-mkdir atool-tutorial
+## Example SELECT statement
 
-cd atool-tutorial
+Let's write a raw sql statement using Java strings to select from the user table. We will write this as a prepared statement to help prevent [SQL injection attacks](https://en.wikipedia.org/wiki/SQL_injection).
 
-echo 'hello' >> a.txt
-echo 'good bye' >> b.txt
+A typical usage is selecting all columns from a table but the where clause is dynamically generated. You pass in the where columns and values and the sql is built dynamically.
 
-# Create a .zip file containing these two files
+```java
+// SNIP
+// where columns/values are in whereClause variable
+Map<String, Object> whereClause = Map.of("id", 1, "type", "basic");
+String sql = "SELECT * FROM USER ";
 
-apack my-archive.zip a.txt b.txt
+if (!whereClause.isEmpty()) {
+    sql += "WHERE ";
 
-# Now have file called my-archive.zip
-# Look inside the archive using atool's als command
+    List<Map.Entry<String, Object>> entryList = whereClause.entrySet().stream().collect(Collectors.toList());
+    for (int i = 0; i < entryList.size(); i++) {
+        sql += entryList.get(i).getKey() + " = ?";
 
-als my-archive.zip
+        if (i < entryList.size() - 1) {
+            sql += " AND ";
+        }
+    }
+}
 
-# Double check the file using 'file' command
+System.out.println(sql);
 
-file my-archive.zip
-
-# my-archive.zip: Zip archive data, at least v1.0 to extract
-
-# Test extract
-rm a.txt
-rm b.txt
-
-ls
-
-# Only the archive left in the directory
-
-aunpack my-archive.zip
-
-# Creates a subdirectory and extracts files to it
-
-ls -lahrt my-archive
-
-# Remove extracted directory, keeping the zip file
-
-rm -rf my-archive
-
-# Use atool to change the archive from .zip to .tar.gz
-
-arepack my-archive.zip my-archive.tar.gz
-
-ls -lahrt
-
-# New file is .gz
-
-file my-archive.tar.gz
-
-# Demonstrate using gunzip/tar on this new file -- the old way
-
-gunzip my-archive.tar.gz
-tar xf my-archive.tar
-
-# Files extracted to current directory, yuck!
-
-ls -lahrt
-
-# Remove the extracted files and tarball
-rm a.txt
-rm b.txt
-rm my-archive.tar
-
-# Try the tar.gz again, but using only atool
-
-arepack my-archive.zip my-archive.tar.gz
-aunpack my-archive.tar.gz
-
-ls -lahrt
-
-# Notice how atool didn't extract the tar.gz to current directory.
-# atool created a specific subdirectory for it. Nice!
+// OUTPUT:
+// SELECT * FROM USER type = ? AND id = ?
 
 ```
 
-## Wrap up
+This is awkward and too much work to write a single SQL statement.
 
-Get out of archive hell.
+## sql-statement-builder - using fluent Select statement
 
-Stop using narrow commands like tar, gzip, gunzip, zip, bzip, etc. Too much to memorize.
+A [fluent API](https://en.wikipedia.org/wiki/Fluent_interface) uses an expressive, method-chaining approach. They are good for the [builder pattern](https://en.wikipedia.org/wiki/Builder_pattern), which is a pattern that creates complex objects in a clear, concise way.
 
-There's even a [tar comic from xkcd](https://xkcd.com/1168/) that highlights how awful the tar commands is.
+Here's a select example from [sql-statement-builder](https://github.com/mikeleitz/sql-statement-builder).
 
-Up your productivity by using higher level commands like atool.
+```java
+SqlString sqlStatement = new SqlString.SqlStringBuilder()
+    .select()								// first specify what operation you want: select, insert, delete, or update
+    .column("first_name")		// next put in all the columns you want to select
+    .column("last_name")
+    .fromTable("users")			// the table you're selecting from
+    .where("id", 1)					// zero or more where predicates (predicate means returns true or false)
+    .orderBy("last_name")		// zero or more ordering directives
+    .build();								// create the selectStatement obejct
 
-One command to rule all archives!
+// can get a preparedStatment with ? for parameters or statement with the actual parameter values
+System.out.println(sqlStatement.getSqlPreparedStatement())
+
+// OUTPUT:
+// SELECT FIRST_NAME, LAST_NAME FROM USERS WHERE ID = ? ORDER BY LAST_NAME
+
+System.out.println(sqlStatement.getSqlStatement())
+
+// OUTPUT:
+// SELECT FIRST_NAME, LAST_NAME FROM USERS WHERE ID = '1' ORDER BY LAST_NAME
+
+
+```
+
+## What is sql-statement-builder good for?
+
+1. Allows you to build sql statements using the way you naturally write code.
+2. You can add where entries one at a time just like you would when parsing a user request.
+3. Easier to read.
+4. Keeps parameters with the SqlString object. Easy to pass those into execute prepared statement.
+
+## What are the limitations?
+
+1. This creates MySQL SQL statements. The sql statements might work on other database, because it's basic SQL but that's not guaranteed.
+2. Only supports SELECT, UPDATE, DELETE, and INSERT.
+
+## What about in the corporate world?
+
+For large projects especially when working for large companies, I'll use Hibernate. It's a common framework that's used just about everywhere in the Java world.
+
+No one ever got yelled at for picking Hibernate.
+
+For everything else, I like SQL statements.
+
+## Conclusion
+
+Too many developers pick ORM frameworks like HIbernate without considering what the project really needs to access the database.
+
+Don't be afraid to pick straight SQL statements.
 
 ### Add your thoughts to the discussion
 
