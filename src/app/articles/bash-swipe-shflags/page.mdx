@@ -1,0 +1,195 @@
+import { ArticleLayout } from '@/components/ArticleLayout'
+import Image from 'next/image'
+
+export const article = {
+  author: 'Leitz',
+  date: '2024-12-03',
+  title: 'Make parsing your bash script inputs easier with shflags',
+  description:
+    'Bash scripting is an esoteric practice that\'s more like black magic than a programmer\'s tool. Parsing inputs is a tedious process unless you use a tool like shflags. Here\'s how to do it.',
+}
+
+export const metadata = {
+  title: article.title,
+  description: article.description,
+}
+
+export default (props) => <ArticleLayout article={article} {...props} />
+
+## Overview
+
+Professional devs and 10x devs in particular use Bash scripts constantly to improve their productivity.
+
+Yet many devs don't use them? Why? What's stopping devs from reaching the 10x plateau? It's that Bash scripting is too hard.
+
+Bash scripting is an esoteric practice that's more like black magic than a programmer's tool.
+
+I'm going to change that. I'm going to make Bash scripts more approachable to the developer community and you *can* get your head around this technology. You can elevate your game.
+
+## Parsing Bash Inputs
+
+Given how so many Bash scripts accept user input, you would think parsing and validating user input would be easy. It's not. It's stupidly hard.
+
+Luckily someone at Google [Kate Ward](https://github.com/kward) created [shflags](https://github.com/kward/shflags). shflags makes it easy to parse user input.
+
+Here's a script I wrote explaining how to use shflags. Once you see this, you'll never think parsing Bash inputs is hard again.
+
+```bash
+#!/usr/bin/env bash
+
+# use shflags. This acts as an import type statement.
+. ../deps/shflags/shflags.sh
+
+# shflags is a script that helps parse bash inputs. It's tremendous and handles the tedious parsing of inputs.
+# https://github.com/kward/shflags
+#
+# IMPORTANT FOR OSX
+# osx comes with a version of getopt that is very limited. You need to install homebrew gnu-getopt and update your PATH
+#
+# Here's how (mac osx only)
+#
+# brew install gnu-getopt
+# echo 'export PATH="/opt/homebrew/opt/gnu-getopt/bin:$PATH"' >> ~/.zshrc
+# open new terminal tab/window or run: source ~/.zshrc
+#
+
+# Example using shflags:
+#
+# Let's say, a fictitious bash script does some sort of processing.
+#
+# You might need the following variables input by the user
+#
+# 1. input-path:string          - where the file is
+# 2. ignore-whitespace:boolean  - should the program ignore whitespace
+# 3. compression-factor:float   - set the level of compression the user wants
+# 4. repeat:integer             - how many times the user wants to repeat the process
+#
+# A sample execution looks like this
+#
+# ./12-parse-input-with-shflags.sh --input-path '/my/path' -w -c "0.5" -r 10 my additional input
+#
+# Typically, in Bash you would have to write all the code to handle this yourself, but shflags makes this all very easy.
+#
+# We have 4 options: --input-path, --ignore-whitespace, --compression-factor, and --repeat.
+#
+# --input-path this is a string value we want to default the value to './'
+# --ignore-whitespace is a boolean. It defaults to false unless the user specifies --ignore-whitespace. Default false.
+# --compression-factor is a float value and defaults to 0.5
+# --repeat in an integer that defaults to 1.
+#
+# Defining variables in shfalgs is easy and it uses the following format
+#
+# Let's use input-path as an example.
+#
+# How to define input-path in shflags:
+#
+# DEFINE_string 'input-path' './' 'input path for the operation' 'i'
+#
+# What each element of that statement means
+#
+#  _flags_type_=$1                     # e.g. DEFINE_string, DEFINE_float, DEFINE_integer, DEFINE_boolean
+#  _flags_name_=$2                     # the variable. In this case: input-path
+#  _flags_default_=$3                  # the default value of './'
+#  _flags_help_=${4:-§}                # text to display when user inputs -h. NOTE: Special value '§' indicates no help string provided.
+#  _flags_short_=${5:-${__FLAGS_NULL}} # the short name. -i in this case.
+#
+# To Summarize
+#
+# arg0 - the data type
+# arg1 - variable to put input into
+# arg2 - default value
+# arg3 - help test
+# arg4 - short name
+
+### The actual working script ###
+
+# input-path allows the caller to use --input-path <value>. The script puts <value> into the variable FLAGS_input_path.
+# the dashes turn to underscores for the variable name.
+# ./ is the default value in case the caller doesn't specify the option.
+# 'input path for the operation' is what shows up in the help text. ./12-parse-input-with-shflags.sh --help
+# i is the short version. e.g. ./12-parse-input-with-shflags.sh -i <value>
+DEFINE_string 'input-path' './' 'input path for the operation' 'i'
+
+# float and integer are the same way.
+# In addition float and integer will run a validation and make sure the caller uses valid input.
+DEFINE_float 'compression-factor' '0.5' 'how much compression to use' 'c'
+DEFINE_integer 'repeat' '1' 'how many times to run the operation' 'r'
+
+# Boolean allows true/false switches. If --ignore-whitespace is added, the variable FLAGS_ignore_whitespace will equal 1 (true).
+DEFINE_boolean 'ignore-whitespace' '0' 'should the operation ignore whitespace' 'w'
+
+# if the caller tries to use any option that's not specified, they will get an error.
+
+# This call tells the script to do work.
+FLAGS "$@" || exit $?
+eval set -- "${FLAGS_ARGV}"
+
+# display the results to the console
+echo "input path: ${FLAGS_input_path}"
+echo "ignore whitespace: ${FLAGS_ignore_whitespace}"
+echo "compression factor: ${FLAGS_compression_factor}"
+echo "repeat: ${FLAGS_repeat}"
+
+# These are the additional arguments passed in: my additional input
+# $1 = my
+# $2 = additional
+# $3 = input
+echo "argument 1: $1"
+echo "argument 2: $2"
+echo "argument 3: $3"
+
+# Now you try it!
+#
+# run this example you've been reading:
+#
+# ./12-parse-input-with-shflags.sh --input-path '/my/path' -w -c "0.5" -r 10 my additional input
+#
+# expected output
+#   input path: /my/path
+#   ignore whitespace: 1
+#   compression factor: 0.5
+#   repeat: 10
+#   argument 1: my
+#   argument 2: additional
+#   argument 3: input
+#
+# run example:
+#
+# ./12-parse-input-with-shflags.sh --input-path '/my/path' -c "0.5" -r 10 my additional input
+#
+#   input path: /my/path
+#   ignore whitespace: 0
+#   compression factor: 0.5
+#   repeat: 10
+#   argument 1: my
+#   argument 2: additional
+#   argument 3: input
+#
+## This example doesn't have -w. Notice how ignore whitespace is now 0 instead of 1. Everything else is the same.
+#
+# run example:
+#
+# ./12-parse-input-with-shflags.sh --input-path '/my/path' -w -c "xyz" -r 10 my additional input
+#
+# expected output is an error message because -c expects a float number
+#   flags:FATAL invalid float value (xyz)
+#
+
+#
+# That's it!
+# Knowing this information will dramatically speed up your bash script creations
+#
+
+```
+
+## Conclusion
+
+Part of being a great developer is understanding what tools and technologies are out there and how to use them.
+
+Bash is ubiquitous. Understanding how to use it will help you in your day to day developer life.
+
+NOTE: This code is an excerpt from my popular Bash Swipe product. [Leitz's Bash Swipe](https://bashswipe.com)
+
+[I have a level headed thought I want to share](https://x.com/mleitz1/status/1802110090650034502)
+
+[I have an totally unhinged thought you must know about, RIGHT NOW!](https://x.com/mleitz1/status/1802110090650034502)
